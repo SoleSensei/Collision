@@ -5,11 +5,13 @@ LDFLAGS = -lglfw -lGL -lGLEW -lX11 -lpthread -lXrandr -lXi -ldl
 
 all: test
 
-test:  test.cpp glad.o primitives.o
-	$(CXX) $(CXXFLAGS) test.cpp glad.o primitives.o -o test $(LDFLAGS)
-primitives.o:
+test:  test.cpp glad.o primitives.o scene.o
+	$(CXX) $(CXXFLAGS) test.cpp glad.o primitives.o scene.o -o test $(LDFLAGS)
+primitives.o: primitives.cpp
 	$(CXX) $(CXXFLAGS) -c primitives.cpp -o primitives.o
-glad.o:
+scene.o: scene.cpp
+	$(CXX) $(CXXFLAGS) -c scene.cpp -o scene.o
+glad.o: glad.c
 	$(CXX) $(CXXFLAGS) -c glad.c -o glad.o
 
 clean:
