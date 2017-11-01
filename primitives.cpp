@@ -4,11 +4,24 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
+Box::Box(){
+    time=0.0;
+    width=0.5f;
+    height=0.5f;
+    text_scale=1.0f;
+    texture=0;
+    depth=0.5f;
+    direction=glm::vec3(0.0f,0.0f,-1.0f);
+    position=glm::vec3(0.0f,0.0f,0.0f);
+    rotation=glm::vec3(0.0f,0.0f,0.0f);
+    velocity=1.0f;
+    rot_velocity=0.0f;
 
-Box::Box(Shader &sh,GLfloat w, GLfloat h, GLfloat d,
+}
+Box::Box(GLfloat w, GLfloat h, GLfloat d,
          const char * text_name,GLfloat sc,glm::vec3 pos,glm::vec3 dir,
-         glm::vec3 rot,GLfloat vel,GLfloat rot_vel):shader(sh){
-
+         glm::vec3 rot,GLfloat vel,GLfloat rot_vel){
+    time=0.0;
     texture_name = text_name;
     text_scale=sc;
     texture=0;
@@ -22,7 +35,9 @@ Box::Box(Shader &sh,GLfloat w, GLfloat h, GLfloat d,
 	rot_velocity = rot_vel;
 }
 
-
+void Box::InitTime(){
+    time = (float)glfwGetTime();
+}
 void Box::InitRenderData(){
 	// Configure VAO/VBO
     GLuint VBO;
@@ -112,27 +127,24 @@ void Box::InitTexture(){
     }
     stbi_image_free(data);
 }
-void Box::Render(glm::vec3 camera_pos, glm::vec3 camera_front, glm::vec3 camera_up){
+void Box::Render(Shader *sh,glm::vec3 &camera_pos, glm::vec3 &camera_front, glm::vec3 &camera_up){
 	// Prepare transformations
     glBindTexture(GL_TEXTURE_2D, this->texture);
-
-
-
-    this->shader.use();
+    sh->use();
     glm::mat4 view;
     glm::mat4 projection;
     glm::mat4 model;
-    projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)800, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)1366 / (float)768, 0.1f, 100.0f);
     view = glm::lookAt(camera_pos, camera_pos+camera_front, camera_up);
     glBindVertexArray(this->quadVAO);
+    model = glm::translate(model,direction*velocity*((float)glfwGetTime()-time));
     model = glm::translate(model,position);
-    model = glm::translate(model,direction*0.5f*(float)glfwGetTime());
     if(rotation!=glm::vec3(0.0f,0.0f,0.0f))
-    	model = glm::rotate(model,(float)glfwGetTime(), rotation);
+    	model = glm::rotate(model,(float)glfwGetTime()-time, rotation);
     // pass transformation matrices to the shader
-    this->shader.setMat4("projection", projection);
-    this->shader.setMat4("view", view);
-    this->shader.setMat4("model", model);
+    sh->setMat4("projection", projection);
+    sh->setMat4("view", view);
+    sh->setMat4("model", model);
 
     //add texture handle
 
@@ -142,7 +154,7 @@ void Box::Render(glm::vec3 camera_pos, glm::vec3 camera_front, glm::vec3 camera_
 }
 
 
-Plane::Plane(Shader &sh,GLfloat w, GLfloat h ,const char * text_name, GLfloat sc, glm::vec3 pos,glm::vec3 rot,GLfloat a):shader(sh){
+Plane::Plane(GLfloat w, GLfloat h ,const char * text_name, GLfloat sc, glm::vec3 pos,glm::vec3 rot,GLfloat a){
     //normal = norm;
     texture_name=text_name;
     text_scale=sc;
@@ -205,26 +217,26 @@ void Plane::InitTexture(){
     stbi_image_free(data);
 }
 
-void Plane::Render(glm::vec3 camera_pos, glm::vec3 camera_front, glm::vec3 camera_up){
+void Plane::Render(Shader *sh,glm::vec3 &camera_pos, glm::vec3 &camera_front, glm::vec3 &camera_up){
     // Prepare transformations
     glBindTexture(GL_TEXTURE_2D, this->texture);
 
 
 
-    this->shader.use();
+    sh->use();
     glm::mat4 view;
     glm::mat4 projection;
     glm::mat4 model;
-    projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)800, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)1366 / (float)768, 0.1f, 100.0f);
     view = glm::lookAt(camera_pos, camera_pos+camera_front, camera_up);
     glBindVertexArray(this->quadVAO);
     model = glm::translate(model,position);
     if(rotation!=glm::vec3(0.0f,0.0f,0.0f))
         model = glm::rotate(model,glm::radians(angle), rotation);
     // pass transformation matrices to the shader
-    this->shader.setMat4("projection", projection);
-    this->shader.setMat4("view", view);
-    this->shader.setMat4("model", model);
+    sh->setMat4("projection", projection);
+    sh->setMat4("view", view);
+    sh->setMat4("model", model);
 
     //add texture handle
 

@@ -15,15 +15,19 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
+void left_click(GLFWwindow* window,int button, int action, int mods);
+
 // settings
-const unsigned int SCR_WIDTH = 1380;
-const unsigned int SCR_HEIGHT = 800;
+const unsigned int SCR_WIDTH = 1366;
+const unsigned int SCR_HEIGHT = 768;
 
 //camera
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  0.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
+
+Scene scene;
 
 bool firstMouse = true;
 float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
@@ -62,6 +66,7 @@ int main(){
     
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(window,left_click); 
     glfwSetCursorPosCallback(window,mouse_callback);
 
     // glad: load all OpenGL function pointers
@@ -77,20 +82,23 @@ int main(){
     // build and compile shader program
     
 
+    //Compile shaders
+
+    Shader objshader("shaders/object.vs","shaders/object.fs");
+    Shader boxshader("shaders/boxshader.vs","shaders/boxshader.fs");
+
     //Create Scene
-    Scene scene;
-    Shader objshader("shaders/object.vs", "shaders/object.fs"); 
-	Box p(objshader,0.2f,0.7f,0.2f,"data/box.jpg",1.0f,glm::vec3(-0.5f,0.5f,0.0f));
+	Box p(0.2f,0.7f,0.2f,"data/box.jpg",1.0f,glm::vec3(-0.5f,0.5f,0.0f));
 	scene.Add(&p);
-    Box p2(objshader,0.5f,0.2f,0.5f,"data/box2.jpg",1.0f,glm::vec3(0.5f,0.5f,0.0f),glm::vec3(0.0f,0.1f,0.0f),glm::vec3(0.5f,1.0f,0.0f));
+    Box p2(0.5f,0.2f,0.5f,"data/box2.jpg",1.0f,glm::vec3(0.5f,0.5f,0.0f),glm::vec3(0.0f,0.1f,0.0f),glm::vec3(0.5f,1.0f,0.0f));
     scene.Add(&p2);
-    Plane floor(objshader,10.0f,10.0f,"data/floor.jpg",5.0f,glm::vec3(0.0f,-1.0f,0.0f),glm::vec3(1.0f,0.0f,0.0f),0.0f);
+    Plane floor(10.0f,10.0f,"data/floor.jpg",5.0f,glm::vec3(0.0f,-1.0f,0.0f),glm::vec3(1.0f,0.0f,0.0f),0.0f);
     scene.Add(&floor);
-    Plane leftwall(objshader,10.0f,10.0f,"data/wall.jpeg",1.0f,glm::vec3(-5.0f,4.0f,0.0f),glm::vec3(0.0f,0.0f,-1.0f),90.0f);
+    Plane leftwall(10.0f,10.0f,"data/wall.jpeg",1.0f,glm::vec3(-5.0f,4.0f,0.0f),glm::vec3(0.0f,0.0f,-1.0f),90.0f);
     scene.Add(&leftwall);
-    Plane rightwall(objshader,10.0f,10.0f,"data/wall.jpeg",1.0f,glm::vec3(5.0f,4.0f,0.0f),glm::vec3(0.0f,0.0f,1.0f),90.0f);
+    Plane rightwall(10.0f,10.0f,"data/wall.jpeg",1.0f,glm::vec3(5.0f,4.0f,0.0f),glm::vec3(0.0f,0.0f,1.0f),90.0f);
     scene.Add(&rightwall);
-    Plane backwall(objshader,10.0f,10.0f,"data/787.jpg",1.0f,glm::vec3(0.0f,4.0f,-5.0f),glm::vec3(1.0f,0.0f,0.0f),90.f);
+    Plane backwall(10.0f,10.0f,"data/787.jpg",1.0f,glm::vec3(0.0f,4.0f,-5.0f),glm::vec3(1.0f,0.0f,0.0f),90.f);
     scene.Add(&backwall);
     scene.InitScene();
     // render loop
@@ -108,7 +116,10 @@ int main(){
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        scene.DrawScene(cameraPos,cameraFront,cameraUp);
+        scene.DrawScene(&objshader,cameraPos,cameraFront,cameraUp);
+        scene.DrawBoxes(&boxshader,cameraPos,cameraFront,cameraUp);
+
+
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -149,6 +160,11 @@ void processInput(GLFWwindow *window){
         cameraPos += glm::normalize(cameraUp) * cameraSpeed;
 }
 
+void left_click(GLFWwindow* window,int button, int action, int mods){
+	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)==GLFW_PRESS){
+		scene.CreateBox(cameraPos,cameraFront);
+	}
+}
 void mouse_callback(GLFWwindow* window, double xpos, double ypos){
     if (firstMouse)
     {
